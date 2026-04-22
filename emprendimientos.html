@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Directorio Digital · Emprendimientos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07080f;
+    --surface: #0e0f1c;
+    --surface2: #141626;
+    --border: #1e2035;
+    --border2: #282a45;
+    --text: #e8eaff;
+    --muted: #6b6e9a;
+    --accent: #5b6ef5;
+    --accent2: #7c8ff7;
+    --green: #00e5a0;
+    --yellow: #f5c842;
+    --red: #ff6b7a;
+    --purple: #a78bfa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); font-family: 'Outfit', sans-serif; color: var(--text); min-height: 100vh; }
+  ::-webkit-scrollbar { width: 5px; background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  input, select, textarea { font-family: 'Outfit', sans-serif; }
+  input::placeholder, textarea::placeholder { color: #3a3c58; }
+
+  /* ---- LOGIN ---- */
+  #login-screen {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 20px;
+    background: radial-gradient(ellipse at 60% 40%, #1a1040 0%, var(--bg) 60%);
+  }
+  #login-screen.hidden { display: none; }
+  #app-screen { display: none; }
+  #app-screen.visible { display: block; }
+
+  .login-card {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 24px; padding: 44px 40px 36px;
+    width: 100%; max-width: 400px;
+    box-shadow: 0 40px 100px #00000099;
+    animation: modalIn .35s ease;
+  }
+  .login-logo {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 32px;
+  }
+  .login-logo-icon {
+    width: 46px; height: 46px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+  .login-logo h1 { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; }
+  .login-logo p { color: var(--muted); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-top: 3px; }
+  .login-title { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+  .login-sub { color: var(--muted); font-size: 13px; margin-bottom: 28px; }
+  .login-field { margin-bottom: 16px; }
+  .login-field label { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; display: block; margin-bottom: 7px; }
+  .login-field input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 12px; padding: 12px 16px; color: var(--text);
+    font-size: 14px; outline: none; transition: border-color .2s;
+  }
+  .login-field input:focus { border-color: var(--accent); }
+  .login-error {
+    background: #2a1018; border: 1px solid #ff6b7a40; border-radius: 10px;
+    padding: 10px 14px; color: var(--red); font-size: 13px;
+    margin-bottom: 16px; display: none;
+  }
+  .login-error.show { display: block; }
+  .btn-login {
+    width: 100%; background: linear-gradient(135deg, var(--accent), var(--purple));
+    border: none; color: white; border-radius: 12px; padding: 13px;
+    font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px;
+    cursor: pointer; margin-top: 6px; transition: opacity .2s, transform .2s;
+  }
+  .btn-login:hover { opacity: .9; transform: translateY(-1px); }
+  .login-footer { color: var(--muted); font-size: 11px; text-align: center; margin-top: 20px; }
+
+  /* ---- HEADER ---- */
+  .header {
+    background: linear-gradient(180deg, #0e0f1c 0%, transparent 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    position: sticky; top: 0; z-index: 10;
+    backdrop-filter: blur(12px);
+  }
+  .header-inner {
+    max-width: 1400px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 0;
+  }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  .logo-text h1 { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; line-height: 1; }
+  .logo-text p { color: var(--muted); font-size: 10px; letter-spacing: 2px; margin-top: 3px; text-transform: uppercase; }
+  .header-actions { display: flex; gap: 10px; }
+
+  /* ---- BUTTONS ---- */
+  .btn {
+    border: none; border-radius: 10px; padding: 9px 18px;
+    font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 13px;
+    cursor: pointer; display: flex; align-items: center; gap: 7px; transition: all .2s;
+  }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--purple)); color: white; }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px #5b6ef540; }
+  .btn-ghost { background: var(--surface); border: 1px solid var(--border2); color: var(--green); }
+  .btn-ghost:hover { border-color: var(--green); background: #00e5a010; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+  .btn-danger { background: #2a1520; border: 1px solid #ff6b7a30; color: var(--red); }
+  .btn-danger:hover { background: #ff6b7a15; }
+  .btn-edit { background: var(--surface2); border: 1px solid var(--border2); color: var(--accent2); }
+  .btn-edit:hover { border-color: var(--accent2); }
+
+  /* ---- MAIN ---- */
+  .main { max-width: 1400px; margin: 0 auto; padding: 28px 32px; }
+
+  /* ---- STATS ---- */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+  .stat-card {
+    background: linear-gradient(135deg, var(--surface), var(--surface2));
+    border: 1px solid var(--border); border-radius: 16px; padding: 20px 22px;
+    transition: border-color .2s;
+  }
+  .stat-card:hover { border-color: var(--border2); }
+  .stat-icon { font-size: 22px; margin-bottom: 10px; }
+  .stat-label { color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+  .stat-val { font-family: 'Syne', sans-serif; font-size: 34px; font-weight: 800; }
+
+  /* ---- FILTERS ---- */
+  .filters { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; }
+  .search-wrap { flex: 1; min-width: 220px; position: relative; }
+  .search-wrap input {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 16px 10px 40px;
+    color: var(--text); font-size: 13px; outline: none; transition: border-color .2s;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+  .filter-select {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; color: var(--text); font-size: 13px; outline: none; cursor: pointer;
+  }
+  .filter-select:focus { border-color: var(--accent); }
+  .filter-select option { background: var(--surface2); }
+  .view-toggle { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .view-btn { background: none; border: none; padding: 10px 14px; color: var(--muted); cursor: pointer; font-size: 16px; transition: all .2s; }
+  .view-btn.active { background: var(--surface2); color: var(--accent); }
+
+  /* ---- GRID ---- */
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 14px; }
+  .card {
+    background: linear-gradient(145deg, var(--surface) 0%, var(--surface2) 100%);
+    border: 1px solid var(--border); border-radius: 16px; padding: 20px;
+    transition: transform .2s, box-shadow .2s, border-color .2s;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 10px 40px #00000060; border-color: var(--border2); }
+  .card-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .card-name { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+  .card-sub { color: var(--muted); font-size: 12px; margin-top: 3px; }
+  .badge {
+    background: #a78bfa18; color: var(--purple); border: 1px solid #a78bfa30;
+    border-radius: 20px; padding: 3px 10px; font-size: 10px; font-weight: 700;
+    letter-spacing: .5px; text-transform: uppercase; white-space: nowrap;
+  }
+  .score-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
+  .score-label { color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+  .score-val { font-size: 13px; font-weight: 800; }
+  .score-bar { background: var(--bg); border-radius: 4px; height: 5px; overflow: hidden; margin-bottom: 14px; }
+  .score-fill { height: 100%; border-radius: 4px; transition: width .6s cubic-bezier(.34,1.56,.64,1); }
+  .redes-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; min-height: 28px; }
+  .red-chip {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 7px;
+    padding: 3px 9px; font-size: 12px; title: attr(title);
+  }
+  .pos-chip {
+    background: #00e5a010; border: 1px solid #00e5a025; border-radius: 7px;
+    padding: 3px 9px; font-size: 10px; color: var(--green); font-weight: 600;
+  }
+  .card-actions { display: flex; gap: 8px; }
+
+  /* ---- LIST ---- */
+  .list-view { display: flex; flex-direction: column; gap: 6px; }
+  .list-row {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 13px 18px; display: flex; align-items: center; gap: 14px; transition: border-color .2s;
+  }
+  .list-row:hover { border-color: var(--border2); }
+  .list-name { flex: 0 0 200px; }
+  .list-name strong { font-size: 14px; font-weight: 700; display: block; }
+  .list-name span { color: var(--muted); font-size: 11px; }
+  .list-icons { display: flex; gap: 3px; flex: 1; flex-wrap: wrap; }
+  .list-score { display: flex; align-items: center; gap: 10px; min-width: 130px; }
+  .list-actions { display: flex; gap: 6px; }
+
+  /* ---- EMPTY ---- */
+  .empty { text-align: center; padding: 80px 0; color: var(--muted); }
+  .empty .empty-icon { font-size: 52px; margin-bottom: 16px; }
+  .empty h3 { font-family: 'Syne', sans-serif; font-size: 18px; color: var(--text); margin-bottom: 8px; }
+  .empty p { font-size: 13px; }
+
+  /* ---- MODAL ---- */
+  .overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.75); backdrop-filter: blur(8px);
+    z-index: 100; align-items: center; justify-content: center; padding: 16px;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 20px; width: 100%; max-width: 620px; max-height: 90vh;
+    display: flex; flex-direction: column; box-shadow: 0 32px 80px #000000cc;
+    animation: modalIn .25s ease;
+  }
+  @keyframes modalIn { from { opacity:0; transform: translateY(20px) scale(.97); } to { opacity:1; transform: none; } }
+  .modal-header { padding: 22px 26px 0; border-bottom: 1px solid var(--border); }
+  .modal-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 19px; font-weight: 800; }
+  .modal-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; line-height: 1; padding: 4px; border-radius: 6px; transition: color .2s; }
+  .modal-close:hover { color: var(--text); }
+  .tabs { display: flex; gap: 2px; }
+  .tab {
+    padding: 8px 16px; border-radius: 8px 8px 0 0; border: none; cursor: pointer;
+    background: transparent; color: var(--muted); font-family: 'Outfit', sans-serif;
+    font-weight: 600; font-size: 12px; letter-spacing: .5px;
+    border-bottom: 2px solid transparent; transition: all .2s;
+  }
+  .tab.active { background: var(--surface2); color: var(--accent2); border-bottom-color: var(--accent); }
+  .modal-body { padding: 24px 26px; overflow-y: auto; flex: 1; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+  .field input, .field select, .field textarea {
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 10px; padding: 10px 14px; color: var(--text);
+    font-size: 13px; outline: none; transition: border-color .2s; resize: vertical;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+  .field select option { background: var(--surface2); }
+  .pos-list { display: grid; gap: 10px; }
+  .pos-item {
+    background: var(--surface2); border: 1px solid var(--border2); border-radius: 12px;
+    padding: 13px 16px; display: flex; align-items: center; gap: 13px;
+    cursor: pointer; transition: all .2s; user-select: none;
+  }
+  .pos-item:hover { border-color: var(--border); }
+  .pos-item.checked { background: #00e5a008; border-color: #00e5a035; }
+  .pos-check {
+    width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+    background: var(--border2); display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: transparent; transition: all .2s;
+  }
+  .pos-item.checked .pos-check { background: var(--green); color: #07080f; }
+  .pos-text strong { font-size: 14px; font-weight: 600; display: block; }
+  .pos-text span { color: var(--muted); font-size: 11px; }
+  .seg-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); }
+  .modal-footer { padding: 16px 26px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
+  .btn-cancel { background: var(--surface2); border: 1px solid var(--border2); color: var(--muted); border-radius: 10px; padding: 10px 22px; cursor: pointer; font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 13px; transition: all .2s; }
+  .btn-cancel:hover { color: var(--text); }
+  .btn-save {
+    flex: 1; background: linear-gradient(135deg, var(--accent), var(--purple));
+    border: none; color: white; border-radius: 10px; padding: 10px;
+    cursor: pointer; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px;
+    transition: opacity .2s;
+  }
+  .btn-save:hover { opacity: .9; }
+
+  /* ---- CONFIRM MODAL ---- */
+  .confirm-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.75); backdrop-filter: blur(6px);
+    z-index: 200; align-items: center; justify-content: center; padding: 16px;
+  }
+  .confirm-overlay.open { display: flex; }
+  .confirm-box {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 16px; padding: 28px 28px 22px; max-width: 360px; width: 100%;
+    box-shadow: 0 24px 60px #000000cc; animation: modalIn .2s ease; text-align: center;
+  }
+  .confirm-icon { font-size: 36px; margin-bottom: 12px; }
+  .confirm-box h3 { font-family: 'Syne', sans-serif; font-size: 17px; margin-bottom: 8px; }
+  .confirm-box p { color: var(--muted); font-size: 13px; margin-bottom: 22px; }
+  .confirm-actions { display: flex; gap: 10px; }
+  .confirm-actions button { flex: 1; }
+
+  @media (max-width: 700px) {
+    .header { padding: 0 16px; }
+    .main { padding: 20px 16px; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid .full { grid-column: 1; }
+    .seg-grid { grid-template-columns: 1fr; }
+    .list-name { flex: 0 0 140px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">🚀</div>
+      <div>
+        <h1>Directorio Digital</h1>
+        <p>Gestión de Emprendimientos</p>
+      </div>
+    </div>
+    <h2 class="login-title">Bienvenido</h2>
+    <p class="login-sub">Ingresá tus credenciales para continuar</p>
+    <div id="login-error" class="login-error">Usuario o contraseña incorrectos</div>
+    <div class="login-field">
+      <label>Usuario</label>
+      <input type="text" id="l-user" placeholder="Ingresá tu usuario" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-login" onclick="intentarLogin()">Iniciar sesión</button>
+    <p class="login-footer">Acceso restringido · Solo usuarios autorizados</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">🚀</div>
+      <div class="logo-text">
+        <h1>Directorio Digital</h1>
+        <p>Gestión de Emprendimientos</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost" onclick="exportarCSV()">⬇ Exportar CSV</button>
+      <button class="btn btn-primary" onclick="abrirModal()">＋ Agregar</button>
+      <button class="btn" style="background:var(--surface2);border:1px solid var(--border2);color:var(--muted)" onclick="logout()" title="Cerrar sesión">Salir</button>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-icon">🏪</div>
+      <div class="stat-label">Emprendimientos</div>
+      <div class="stat-val" id="stat-total" style="color:var(--accent2)">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📊</div>
+      <div class="stat-label">Score Promedio</div>
+      <div class="stat-val" id="stat-score" style="color:var(--green)">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🔗</div>
+      <div class="stat-label">Perfiles Cargados</div>
+      <div class="stat-val" id="stat-redes" style="color:var(--yellow)">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⭐</div>
+      <div class="stat-label">Alta Presencia</div>
+      <div class="stat-val" id="stat-alta" style="color:var(--red)">0</div>
+    </div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="filters">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="busqueda" placeholder="Buscar por nombre, propietario o localidad..." oninput="renderizar()">
+    </div>
+    <select class="filter-select" id="filtro-categ" onchange="renderizar()">
+      <option value="">Todas las categorías</option>
+      <option>Gastronomía</option><option>Moda y Accesorios</option><option>Tecnología</option>
+      <option>Salud y Bienestar</option><option>Arte y Diseño</option><option>Servicios</option>
+      <option>Educación</option><option>Comercio</option><option>Turismo</option><option>Otro</option>
+    </select>
+    <div class="view-toggle">
+      <button class="view-btn active" id="btn-grid" onclick="cambiarVista('grid')" title="Vista grilla">⊞</button>
+      <button class="view-btn" id="btn-list" onclick="cambiarVista('list')" title="Vista lista">☰</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="contenido"></div>
+</main>
+
+<!-- /APP -->
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑</div>
+    <h3>¿Eliminar emprendimiento?</h3>
+    <p>Esta acción no se puede deshacer.</p>
+    <div class="confirm-actions">
+      <button class="btn-cancel" onclick="cerrarConfirm()">Cancelar</button>
+      <button class="btn btn-danger" style="flex:1;justify-content:center" id="confirm-ok">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="clickOverlay(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title-row">
+        <h2 class="modal-title" id="modal-titulo">＋ Nuevo emprendimiento</h2>
+        <button class="modal-close" onclick="cerrarModal()">✕</button>
+      </div>
+      <div class="tabs">
+        <button class="tab active" onclick="cambiarTab(0)">Datos</button>
+        <button class="tab" onclick="cambiarTab(1)">Redes</button>
+        <button class="tab" onclick="cambiarTab(2)">Posicionamiento</button>
+        <button class="tab" onclick="cambiarTab(3)">Notas</button>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <!-- TAB 0: DATOS -->
+      <div class="tab-panel active" id="tp-0">
+        <div class="form-grid">
+          <div class="field full"><label>Nombre del emprendimiento *</label><input id="f-nombre" type="text"></div>
+          <div class="field"><label>Propietario / Responsable</label><input id="f-propietario" type="text"></div>
+          <div class="field"><label>Teléfono</label><input id="f-telefono" type="text"></div>
+          <div class="field"><label>Email</label><input id="f-email" type="email"></div>
+          <div class="field"><label>Localidad / Ciudad</label><input id="f-localidad" type="text"></div>
+          <div class="field full">
+            <label>Categoría</label>
+            <select id="f-categoria">
+              <option value="">— Seleccionar —</option>
+              <option>Gastronomía</option><option>Moda y Accesorios</option><option>Tecnología</option>
+              <option>Salud y Bienestar</option><option>Arte y Diseño</option><option>Servicios</option>
+              <option>Educación</option><option>Comercio</option><option>Turismo</option><option>Otro</option>
+            </select>
+          </div>
+          <div class="field full"><label>Descripción breve</label><textarea id="f-descripcion" rows="3"></textarea></div>
+        </div>
+      </div>
+
+      <!-- TAB 1: REDES -->
+      <div class="tab-panel" id="tp-1">
+        <div class="form-grid">
+          <div class="field"><label>📸 Instagram</label><input id="f-instagram" placeholder="@usuario"></div>
+          <div class="field"><label>👤 Facebook</label><input id="f-facebook" placeholder="facebook.com/pagina"></div>
+          <div class="field"><label>🎵 TikTok</label><input id="f-tiktok" placeholder="@usuario"></div>
+          <div class="field"><label>✖ X / Twitter</label><input id="f-twitter" placeholder="@usuario"></div>
+          <div class="field"><label>💼 LinkedIn</label><input id="f-linkedin" placeholder="linkedin.com/in/..."></div>
+          <div class="field"><label>▶ YouTube</label><input id="f-youtube" placeholder="youtube.com/@canal"></div>
+          <div class="field"><label>💬 WhatsApp Biz</label><input id="f-whatsapp" placeholder="+549..."></div>
+          <div class="field"><label>🌐 Sitio Web</label><input id="f-web" placeholder="https://..."></div>
+        </div>
+        <div class="seg-grid">
+          <div class="field"><label>📸 Seguidores IG</label><input id="f-seg-ig" type="number" placeholder="0"></div>
+          <div class="field"><label>👤 Likes FB</label><input id="f-seg-fb" type="number" placeholder="0"></div>
+          <div class="field"><label>🎵 Seguidores TK</label><input id="f-seg-tk" type="number" placeholder="0"></div>
+        </div>
+      </div>
+
+      <!-- TAB 2: POSICIONAMIENTO -->
+      <div class="tab-panel" id="tp-2">
+        <div class="pos-list">
+          <div class="pos-item" id="pi-gmb" onclick="togglePos('gmb')">
+            <div class="pos-check" id="pc-gmb"></div>
+            <div class="pos-text"><strong>Google Mi Negocio</strong><span>Perfil en Google Maps activo</span></div>
+          </div>
+          <div class="pos-item" id="pi-seo" onclick="togglePos('seo')">
+            <div class="pos-check" id="pc-seo"></div>
+            <div class="pos-text"><strong>SEO / Blog</strong><span>Contenido optimizado para buscadores</span></div>
+          </div>
+          <div class="pos-item" id="pi-pub" onclick="togglePos('pub')">
+            <div class="pos-check" id="pc-pub"></div>
+            <div class="pos-text"><strong>Publicidad Paga</strong><span>Meta Ads / Google Ads activos</span></div>
+          </div>
+          <div class="pos-item" id="pi-email" onclick="togglePos('email')">
+            <div class="pos-check" id="pc-email"></div>
+            <div class="pos-text"><strong>Email Marketing</strong><span>Lista de correos / newsletter</span></div>
+          </div>
+          <div class="pos-item" id="pi-ecom" onclick="togglePos('ecom')">
+            <div class="pos-check" id="pc-ecom"></div>
+            <div class="pos-text"><strong>E-commerce</strong><span>Tienda online propia o de terceros</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: NOTAS -->
+      <div class="tab-panel" id="tp-3">
+        <div class="field">
+          <label>Notas internas</label>
+          <textarea id="f-notas" rows="9" placeholder="Observaciones, pendientes, oportunidades detectadas..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-save" onclick="guardar()">Registrar emprendimiento</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- AUTH ----
+const CREDS = { user: 'zirus16', pass: '0946' };
+const LS_SESSION = 'dir_session';
+const LS_DATOS   = 'dir_datos';
+
+function intentarLogin() {
+  const u = document.getElementById('l-user').value.trim();
+  const p = document.getElementById('l-pass').value;
+  const err = document.getElementById('login-error');
+  if (u === CREDS.user && p === CREDS.pass) {
+    sessionStorage.setItem(LS_SESSION, '1');
+    err.classList.remove('show');
+    mostrarApp();
+  } else {
+    err.classList.add('show');
+    document.getElementById('l-pass').value = '';
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem(LS_SESSION);
+  document.getElementById('app-screen').classList.remove('visible');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('l-user').value = '';
+  document.getElementById('l-pass').value = '';
+}
+
+function mostrarApp() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app-screen').classList.add('visible');
+  renderizar();
+}
+
+// Enter en login
+document.getElementById('l-pass').addEventListener('keydown', e => { if(e.key==='Enter') intentarLogin(); });
+document.getElementById('l-user').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('l-pass').focus(); });
+
+// ---- DATA ----
+const REDES = [
+  { k: 'instagram', icon: '📸', label: 'Instagram' },
+  { k: 'facebook',  icon: '👤', label: 'Facebook' },
+  { k: 'tiktok',   icon: '🎵', label: 'TikTok' },
+  { k: 'twitter',  icon: '✖',  label: 'X/Twitter' },
+  { k: 'linkedin', icon: '💼', label: 'LinkedIn' },
+  { k: 'youtube',  icon: '▶',  label: 'YouTube' },
+  { k: 'whatsapp', icon: '💬', label: 'WhatsApp' },
+  { k: 'web',      icon: '🌐', label: 'Sitio Web' },
+];
+const POS_KEYS = ['gmb','seo','pub','email','ecom'];
+const POS_LABELS = { gmb:'Google Mi Negocio', seo:'SEO/Blog', pub:'Publicidad Paga', email:'Email Mkt', ecom:'E-commerce' };
+
+// Cargar desde localStorage, sin demo data
+let datos = JSON.parse(localStorage.getItem(LS_DATOS) || '[]');
+
+function guardarLS() {
+  localStorage.setItem(LS_DATOS, JSON.stringify(datos));
+}
+
+let editId = null;
+let vistaActual = 'grid';
+let posState = { gmb:false, seo:false, pub:false, email:false, ecom:false };
+
+// ---- SCORE ----
+function calcScore(e) {
+  let s = 0;
+  REDES.forEach(r => { if (e[r.k]) s++; });
+  POS_KEYS.forEach(k => { if (e[k] || e['email_mk']) { if(k==='email' && e['email_mk']) s+=1.5; else if(k!=='email' && e[k]) s+=1.5; } });
+  const pos = (e.gmb?1.5:0)+(e.seo?1.5:0)+(e.pub?1.5:0)+(e.email_mk?1.5:0)+(e.ecom?1.5:0);
+  const tot = REDES.length + 5*1.5;
+  return Math.min(10, Math.round(((REDES.filter(r=>e[r.k]).length + pos) / tot) * 100) / 10);
+}
+
+function scoreColor(s) {
+  if (s >= 7) return 'var(--green)';
+  if (s >= 4) return 'var(--yellow)';
+  return 'var(--red)';
+}
+
+// ---- STATS ----
+function actualizarStats() {
+  document.getElementById('stat-total').textContent = datos.length;
+  const avg = datos.length ? (datos.reduce((a,e)=>a+calcScore(e),0)/datos.length).toFixed(1) : 0;
+  document.getElementById('stat-score').textContent = avg;
+  const totalRedes = datos.reduce((a,e)=>a+REDES.filter(r=>e[r.k]).length,0);
+  document.getElementById('stat-redes').textContent = totalRedes;
+  document.getElementById('stat-alta').textContent = datos.filter(e=>calcScore(e)>=7).length;
+}
+
+// ---- RENDER ----
+function filtrar() {
+  const q = document.getElementById('busqueda').value.toLowerCase();
+  const cat = document.getElementById('filtro-categ').value;
+  return datos.filter(e => {
+    const mq = !q || e.nombre.toLowerCase().includes(q) || (e.propietario||'').toLowerCase().includes(q) || (e.localidad||'').toLowerCase().includes(q);
+    const mc = !cat || e.categoria === cat;
+    return mq && mc;
+  });
+}
+
+function renderizar() {
+  actualizarStats();
+  const lista = filtrar();
+  const cont = document.getElementById('contenido');
+  if (!lista.length) {
+    cont.innerHTML = `<div class="empty"><div class="empty-icon">🔭</div><h3>Sin resultados</h3><p>Ajustá los filtros o agregá un nuevo emprendimiento</p></div>`;
+    return;
+  }
+  if (vistaActual === 'grid') renderGrid(lista, cont);
+  else renderList(lista, cont);
+}
+
+function renderGrid(lista, cont) {
+  cont.innerHTML = `<div class="cards-grid">${lista.map(e => cardHTML(e)).join('')}</div>`;
+}
+
+function cardHTML(e) {
+  const s = calcScore(e);
+  const c = scoreColor(s);
+  const redesActivas = REDES.filter(r=>e[r.k]);
+  const posActivas = POS_KEYS.filter(k => k==='email' ? e.email_mk : e[k]);
+  return `
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-name">${e.nombre}</div>
+        <div class="card-sub">${e.propietario||'—'} · ${e.localidad||'—'}</div>
+      </div>
+      <span class="badge">${e.categoria||'Sin cat.'}</span>
+    </div>
+    <div class="score-row">
+      <span class="score-label">Presencia Digital</span>
+      <span class="score-val" style="color:${c}">${s}/10</span>
+    </div>
+    <div class="score-bar"><div class="score-fill" style="width:${s*10}%;background:${c}"></div></div>
+    <div class="redes-row">
+      ${redesActivas.map(r=>`<span class="red-chip" title="${r.label}: ${e[r.k]}">${r.icon}</span>`).join('')}
+      ${posActivas.map(k=>`<span class="pos-chip">✓ ${POS_LABELS[k]||'Email Mkt'}</span>`).join('')}
+    </div>
+    <div class="card-actions">
+      <button class="btn btn-sm btn-edit" style="flex:1" onclick="abrirEditar(${e.id})">✏ Editar</button>
+      <button class="btn btn-sm btn-danger" onclick="eliminar(${e.id})">✕</button>
+    </div>
+  </div>`;
+}
+
+function renderList(lista, cont) {
+  const rows = lista.map(e => {
+    const s = calcScore(e);
+    const c = scoreColor(s);
+    const redesActivas = REDES.filter(r=>e[r.k]);
+    return `
+    <div class="list-row">
+      <div class="list-name">
+        <strong>${e.nombre}</strong>
+        <span>${e.localidad||'—'}</span>
+      </div>
+      <span class="badge">${e.categoria||'—'}</span>
+      <div class="list-icons">
+        ${redesActivas.map(r=>`<span class="red-chip" title="${r.label}">${r.icon}</span>`).join('')}
+      </div>
+      <div class="list-score">
+        <div class="score-bar" style="flex:1"><div class="score-fill" style="width:${s*10}%;background:${c}"></div></div>
+        <span style="color:${c};font-weight:800;font-size:13px;min-width:28px">${s}</span>
+      </div>
+      <div class="list-actions">
+        <button class="btn btn-sm btn-edit" onclick="abrirEditar(${e.id})">✏</button>
+        <button class="btn btn-sm btn-danger" onclick="eliminar(${e.id})">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+  cont.innerHTML = `<div class="list-view">${rows}</div>`;
+}
+
+// ---- VISTA ----
+function cambiarVista(v) {
+  vistaActual = v;
+  document.getElementById('btn-grid').classList.toggle('active', v==='grid');
+  document.getElementById('btn-list').classList.toggle('active', v==='list');
+  renderizar();
+}
+
+// ---- MODAL ----
+let tabActual = 0;
+function abrirModal() {
+  editId = null;
+  limpiarForm();
+  document.getElementById('modal-titulo').textContent = '＋ Nuevo emprendimiento';
+  document.querySelector('.btn-save').textContent = 'Registrar emprendimiento';
+  document.getElementById('overlay').classList.add('open');
+  cambiarTab(0);
+}
+
+function abrirEditar(id) {
+  const e = datos.find(x=>x.id===id);
+  if (!e) return;
+  editId = id;
+  limpiarForm();
+  // Datos
+  ['nombre','propietario','telefono','email','localidad','descripcion'].forEach(k=>{
+    const el = document.getElementById('f-'+k); if(el) el.value = e[k]||'';
+  });
+  document.getElementById('f-categoria').value = e.categoria||'';
+  // Redes
+  REDES.forEach(r=>{ const el=document.getElementById('f-'+r.k); if(el) el.value=e[r.k]||''; });
+  document.getElementById('f-seg-ig').value = e.seg_ig||'';
+  document.getElementById('f-seg-fb').value = e.seg_fb||'';
+  document.getElementById('f-seg-tk').value = e.seg_tk||'';
+  // Pos
+  posState = { gmb:!!e.gmb, seo:!!e.seo, pub:!!e.pub, email:!!e.email_mk, ecom:!!e.ecom };
+  POS_KEYS.forEach(k => {
+    const item = document.getElementById('pi-'+k);
+    const check = document.getElementById('pc-'+k);
+    if (!item || !check) return;
+    if (posState[k]) { item.classList.add('checked'); check.textContent='✓'; }
+  });
+  // Notas
+  document.getElementById('f-notas').value = e.notas||'';
+  document.getElementById('modal-titulo').textContent = '✏ Editar emprendimiento';
+  document.querySelector('.btn-save').textContent = 'Guardar cambios';
+  document.getElementById('overlay').classList.add('open');
+  cambiarTab(0);
+}
+
+function cerrarModal() {
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function clickOverlay(e) {
+  if (e.target === document.getElementById('overlay')) cerrarModal();
+}
+
+function limpiarForm() {
+  ['nombre','propietario','telefono','email','localidad','descripcion','notas'].forEach(k=>{
+    const el = document.getElementById('f-'+k); if(el) el.value='';
+  });
+  document.getElementById('f-categoria').value='';
+  REDES.forEach(r=>{ const el=document.getElementById('f-'+r.k); if(el) el.value=''; });
+  document.getElementById('f-seg-ig').value='';
+  document.getElementById('f-seg-fb').value='';
+  document.getElementById('f-seg-tk').value='';
+  posState = { gmb:false, seo:false, pub:false, email:false, ecom:false };
+  POS_KEYS.forEach(k=>{
+    const item=document.getElementById('pi-'+k), check=document.getElementById('pc-'+k);
+    if(item) item.classList.remove('checked');
+    if(check) check.textContent='';
+  });
+}
+
+function cambiarTab(i) {
+  tabActual = i;
+  document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',j===i));
+  document.querySelectorAll('.tab-panel').forEach((p,j)=>p.classList.toggle('active',j===i));
+}
+
+function togglePos(k) {
+  posState[k] = !posState[k];
+  const item=document.getElementById('pi-'+k), check=document.getElementById('pc-'+k);
+  if(posState[k]){ item.classList.add('checked'); check.textContent='✓'; }
+  else { item.classList.remove('checked'); check.textContent=''; }
+}
+
+function guardar() {
+  const nombre = document.getElementById('f-nombre').value.trim();
+  if (!nombre) { document.getElementById('f-nombre').focus(); return; }
+  const obj = {
+    nombre,
+    propietario: document.getElementById('f-propietario').value,
+    telefono:    document.getElementById('f-telefono').value,
+    email:       document.getElementById('f-email').value,
+    localidad:   document.getElementById('f-localidad').value,
+    descripcion: document.getElementById('f-descripcion').value,
+    categoria:   document.getElementById('f-categoria').value,
+    instagram:   document.getElementById('f-instagram').value,
+    facebook:    document.getElementById('f-facebook').value,
+    tiktok:      document.getElementById('f-tiktok').value,
+    twitter:     document.getElementById('f-twitter').value,
+    linkedin:    document.getElementById('f-linkedin').value,
+    youtube:     document.getElementById('f-youtube').value,
+    whatsapp:    document.getElementById('f-whatsapp').value,
+    web:         document.getElementById('f-web').value,
+    seg_ig:      document.getElementById('f-seg-ig').value,
+    seg_fb:      document.getElementById('f-seg-fb').value,
+    seg_tk:      document.getElementById('f-seg-tk').value,
+    gmb:         posState.gmb, seo: posState.seo, pub: posState.pub,
+    email_mk:    posState.email, ecom: posState.ecom,
+    notas:       document.getElementById('f-notas').value,
+    fecha:       new Date().toISOString().slice(0,10),
+  };
+  if (editId) {
+    const idx = datos.findIndex(e=>e.id===editId);
+    datos[idx] = { ...datos[idx], ...obj };
+  } else {
+    obj.id = Date.now();
+    datos.push(obj);
+  }
+  cerrarModal();
+  guardarLS();
+  renderizar();
+}
+
+let pendingDeleteId = null;
+function eliminar(id) {
+  pendingDeleteId = id;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+function cerrarConfirm() {
+  pendingDeleteId = null;
+  document.getElementById('confirm-overlay').classList.remove('open');
+}
+document.getElementById('confirm-ok').addEventListener('click', function() {
+  if (pendingDeleteId !== null) {
+    datos = datos.filter(e => e.id !== pendingDeleteId);
+    guardarLS();
+    renderizar();
+  }
+  cerrarConfirm();
+});
+
+// ---- EXPORT ----
+function exportarCSV() {
+  const headers = [
+    'ID','Nombre','Propietario','Categoría','Teléfono','Email','Localidad','Descripción',
+    'Instagram','Facebook','TikTok','Twitter','LinkedIn','YouTube','WhatsApp','Sitio Web',
+    'Seguidores IG','Likes FB','Seguidores TK',
+    'Google Mi Negocio','SEO/Blog','Publicidad Paga','Email Marketing','E-commerce',
+    'Score Digital','Notas','Fecha'
+  ];
+  const esc = v => '"' + String(v??'').replace(/"/g,'""') + '"';
+  const rows = datos.map(e => [
+    e.id, e.nombre, e.propietario, e.categoria, e.telefono, e.email, e.localidad, e.descripcion,
+    e.instagram, e.facebook, e.tiktok, e.twitter, e.linkedin, e.youtube, e.whatsapp, e.web,
+    e.seg_ig, e.seg_fb, e.seg_tk,
+    e.gmb?'Sí':'No', e.seo?'Sí':'No', e.pub?'Sí':'No', e.email_mk?'Sí':'No', e.ecom?'Sí':'No',
+    calcScore(e), e.notas, e.fecha
+  ].map(esc).join(','));
+  const csv = '\uFEFF' + [headers.map(esc).join(','), ...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'emprendimientos_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+// ---- INIT ----
+if (sessionStorage.getItem(LS_SESSION)) {
+  mostrarApp();
+}
+</script>
+</body>
+</html>
