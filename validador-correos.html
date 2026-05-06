@@ -371,11 +371,12 @@ function deriveStatus(v,sc) {
 }
 
 function group(r) {
-  const s = r.status;
-  if(s==='VALID')     return 'VALID';
-  if(['NO_MX_RECORDS','DISPOSABLE','ROLE_BASED','RISKY'].includes(s)) return 'RISKY';
-  if(['PENDING','ERROR'].includes(s)) return s;
-  return 'INVALID';
+   const s = r.status;
+   if(s==='VALID')      return 'VALID';
+   if(['NO_MX_RECORDS','ROLE_BASED','RISKY'].includes(s)) return 'RISKY';
+   if(['DISPOSABLE'].includes(s)) return 'INVALID';
+   if(['PENDING','ERROR'].includes(s)) return s;
+   return 'INVALID';
 }
 
 /* ── RENDER ── */
