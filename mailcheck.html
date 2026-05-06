@@ -216,14 +216,10 @@
       </div>
 
       <!-- STATS -->
-      <div id="statsGrid" style="display:none;" class="grid grid-cols-3 gap-3 mt-5">
+      <div id="statsGrid" style="display:none;" class="grid grid-cols-2 gap-3 mt-5">
         <div class="stat-card">
           <div class="mono font-bold text-2xl" id="statValid" style="color:var(--green-text)">0</div>
           <div class="text-xs mt-1" style="color:var(--muted)">válidos</div>
-        </div>
-        <div class="stat-card">
-          <div class="mono font-bold text-2xl" id="statWarning" style="color:var(--amber-text)">0</div>
-          <div class="text-xs mt-1" style="color:var(--muted)">alertas</div>
         </div>
         <div class="stat-card">
           <div class="mono font-bold text-2xl" id="statInvalid" style="color:var(--red-text)">0</div>
@@ -246,7 +242,6 @@
           <div class="flex gap-1" id="filterTabs">
             <button class="filter-tab active" data-filter="all">Todos</button>
             <button class="filter-tab" data-filter="valid">✓ Válidos</button>
-            <button class="filter-tab" data-filter="warning">⚠ Alertas</button>
             <button class="filter-tab" data-filter="invalid">✗ Inválidos</button>
           </div>
           <button id="exportBtn" class="btn-ghost text-xs px-3 py-1 rounded" style="font-size:11px;" disabled>↓ CSV</button>
@@ -336,26 +331,25 @@ document.getElementById('filterTabs').addEventListener('click', e => {
 });
 
 function classify(r) {
-  const v = r.validations || {};
-  if (v.is_disposable || v.is_role_based) return 'warning';
   if (r.status) {
     const s = r.status.toUpperCase();
-    if (['INVALID_SYNTAX','INVALID_DOMAIN','NO_MX_RECORDS','INVALID'].includes(s)) return 'invalid';
     if (s === 'VALID') return 'valid';
+    return 'invalid';
   }
-  if (!v.syntax || !v.domain_exists || !v.mx_records || v.mailbox_exists === false) return 'invalid';
-  return 'valid';
+  const v = r.validations || {};
+  if (v.syntax && v.domain_exists && v.mx_records && v.mailbox_exists) return 'valid';
+  return 'invalid';
 }
 
 function getTags(r) {
   const v = r.validations || {};
   const t = [];
-  if (v.is_disposable) t.push({ text: 'desechable', cls: 'invalid' });
-  if (v.is_role_based) t.push({ text: 'rol', cls: 'invalid' });
-  if (v.syntax === false) t.push({ text: 'sintaxis inválida', cls: 'invalid' });
-  if (v.domain_exists === false) t.push({ text: 'dominio inválido', cls: 'invalid' });
+  if (v.is_disposable) t.push({ text: 'desechable', cls: 'info' });
+  if (v.is_role_based) t.push({ text: 'rol', cls: 'info' });
+  if (v.syntax === false) t.push({ text: 'sintaxis', cls: 'invalid' });
+  if (v.domain_exists === false) t.push({ text: 'dominio', cls: 'invalid' });
   if (v.mx_records === false) t.push({ text: 'sin MX', cls: 'invalid' });
-  if (v.mailbox_exists === false) t.push({ text: 'buzón no existe', cls: 'invalid' });
+  if (v.mailbox_exists === false) t.push({ text: 'buzón', cls: 'invalid' });
   return t;
 }
 
@@ -376,7 +370,7 @@ function renderResults() {
 
   resultsList.innerHTML = filtered.map((r, i) => {
     const cls = classify(r);
-    const label = { valid: 'válido', warning: 'alerta', invalid: 'inválido' }[cls];
+    const label = { valid: 'válido', invalid: 'inválido' }[cls];
     const tags = getTags(r);
     const delay = Math.min(i * 25, 300);
     return `
@@ -398,10 +392,8 @@ function renderResults() {
 
 function updateStats() {
   const v = allResults.filter(r => classify(r) === 'valid').length;
-  const w = allResults.filter(r => classify(r) === 'warning').length;
   const inv = allResults.filter(r => classify(r) === 'invalid').length;
   document.getElementById('statValid').textContent = v;
-  document.getElementById('statWarning').textContent = w;
   document.getElementById('statInvalid').textContent = inv;
   statsGrid.style.display = 'grid';
 
