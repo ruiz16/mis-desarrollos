@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MAILCHECK — Validador de Emails</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :root {
+    --bg: #0a0a0a;
+    --bg2: #111111;
+    --bg3: #1a1a1a;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #f0f0f0;
+    --muted: #666;
+    --muted2: #444;
+    --green: #1D9E75;
+    --green-bg: rgba(29,158,117,0.12);
+    --green-text: #5DCAA5;
+    --red: #E24B4A;
+    --red-bg: rgba(226,75,74,0.12);
+    --red-text: #F09595;
+    --amber: #BA7517;
+    --amber-bg: rgba(186,117,23,0.12);
+    --amber-text: #FAC775;
+    --blue: #378ADD;
+    --blue-bg: rgba(55,138,221,0.1);
+    --blue-text: #85B7EB;
+  }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    margin: 0;
+  }
+  .mono { font-family: 'Space Mono', monospace; }
+  textarea {
+    font-family: 'Space Mono', monospace;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    outline: none;
+    resize: none;
+    transition: border-color 0.2s;
+  }
+  textarea:focus { border-color: var(--border2); }
+  textarea::placeholder { color: var(--muted); }
+  .btn-primary {
+    background: #f0f0f0;
+    color: #0a0a0a;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn-primary:hover:not(:disabled) { opacity: 0.88; }
+  .btn-primary:active:not(:disabled) { transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .btn-ghost:hover { background: var(--bg3); color: var(--text); }
+  .tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .tag-valid { background: var(--green-bg); color: var(--green-text); }
+  .tag-invalid { background: var(--red-bg); color: var(--red-text); }
+  .tag-risky { background: var(--amber-bg); color: var(--amber-text); }
+  .tag-info { background: var(--bg3); color: var(--muted); border: 1px solid var(--border); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .dot-valid { background: var(--green); }
+  .dot-invalid { background: var(--red); }
+  .dot-risky { background: var(--amber); }
+  .dot-unknown { background: var(--muted); }
+  .result-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    animation: fadeUp 0.2s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .filter-tab {
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .filter-tab.active {
+    background: var(--bg3);
+    border-color: var(--border2);
+    color: var(--text);
+  }
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(10,10,10,0.3);
+    border-top-color: #0a0a0a;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .progress-bar {
+    height: 2px;
+    background: var(--border);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: #f0f0f0;
+    border-radius: 1px;
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    text-align: center;
+  }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .copy-btn {
+    opacity: 0;
+    transition: opacity 0.15s;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 10px;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: 'Space Mono', monospace;
+  }
+  .result-item:hover .copy-btn { opacity: 1; }
+  .copy-btn:hover { color: var(--text); border-color: var(--border2); }
+</style>
+</head>
+<body>
+
+<!-- NOISE OVERLAY -->
+<div style="position:fixed;inset:0;pointer-events:none;opacity:0.025;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22/></filter><rect width=%22200%22 height=%22200%22 filter=%22url(%23n)%22 opacity=%221%22/></svg>');z-index:9999;"></div>
+
+<div class="max-w-5xl mx-auto px-6 py-10">
+
+  <!-- HEADER -->
+  <div class="mb-10 flex items-end justify-between border-b border-white/8 pb-6">
+    <div>
+      <div class="mono text-xs tracking-widest text-white/30 mb-1 uppercase">// batch email validator</div>
+      <h1 class="mono text-3xl font-bold tracking-tight">MAIL<span class="text-white/30">CHECK</span></h1>
+    </div>
+    <div class="text-right">
+      <div class="mono text-xs text-white/20">rapid-email-verifier.fly.dev</div>
+      <div id="apiStatus" class="mono text-xs mt-1" style="color:var(--muted)">— sin conectar</div>
+    </div>
+  </div>
+
+  <!-- GRID LAYOUT -->
+  <div class="grid gap-6" style="grid-template-columns: 1fr 1fr;">
+
+    <!-- LEFT: INPUT PANEL -->
+    <div>
+      <div class="mono text-xs tracking-widest mb-3" style="color:var(--muted)">01 / ENTRADA</div>
+
+      <textarea
+        id="emailInput"
+        rows="12"
+        class="w-full rounded-lg p-4 text-sm leading-relaxed"
+        placeholder="joel@hotmail.com&#10;gerencia@empresa.com&#10;user@dominio.co&#10;&#10;Un email por línea, o separados por coma."
+      ></textarea>
+
+      <div class="flex items-center justify-between mt-2 mb-4">
+        <span class="mono text-xs" style="color:var(--muted)" id="counter">0 emails</span>
+        <button class="btn-ghost text-xs px-3 py-1 rounded" id="pasteBtn" style="font-size:11px;">⌘ Pegar del clipboard</button>
+      </div>
+
+      <div class="progress-bar mb-4" id="progressWrap" style="display:none;">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+
+      <div class="flex gap-3">
+        <button id="validateBtn" class="btn-primary flex-1 py-3 rounded-lg text-sm flex items-center justify-center gap-2" disabled>
+          ✉ Validar emails
+        </button>
+        <button id="clearBtn" class="btn-ghost px-5 py-3 rounded-lg text-sm">Limpiar</button>
+      </div>
+
+      <!-- STATS -->
+      <div id="statsGrid" style="display:none;" class="grid grid-cols-3 gap-3 mt-5">
+        <div class="stat-card">
+          <div class="mono font-bold text-2xl" id="statValid" style="color:var(--green-text)">0</div>
+          <div class="text-xs mt-1" style="color:var(--muted)">válidos</div>
+        </div>
+        <div class="stat-card">
+          <div class="mono font-bold text-2xl" id="statInvalid" style="color:var(--red-text)">0</div>
+          <div class="text-xs mt-1" style="color:var(--muted)">inválidos</div>
+        </div>
+        <div class="stat-card">
+          <div class="mono font-bold text-2xl" id="statRisky" style="color:var(--amber-text)">0</div>
+          <div class="text-xs mt-1" style="color:var(--muted)">riesgosos</div>
+        </div>
+      </div>
+
+      <!-- DOMAIN BREAKDOWN -->
+      <div id="domainBox" style="display:none;" class="mt-5">
+        <div class="mono text-xs tracking-widest mb-3" style="color:var(--muted)">top dominios</div>
+        <div id="domainList" class="flex flex-col gap-2"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: RESULTS PANEL -->
+    <div style="border-left:1px solid var(--border);padding-left:24px;">
+      <div class="flex items-center justify-between mb-4">
+        <div class="mono text-xs tracking-widest" style="color:var(--muted)">02 / RESULTADOS</div>
+        <div class="flex gap-2">
+          <div class="flex gap-1" id="filterTabs">
+            <button class="filter-tab active" data-filter="all">Todos</button>
+            <button class="filter-tab" data-filter="valid">✓</button>
+            <button class="filter-tab" data-filter="invalid">✗</button>
+            <button class="filter-tab" data-filter="risky">~</button>
+          </div>
+          <button id="exportBtn" class="btn-ghost text-xs px-3 py-1 rounded" style="font-size:11px;" disabled>↓ CSV</button>
+        </div>
+      </div>
+
+      <div id="resultsList" style="height:480px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+        <div id="emptyState" style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
+          <div class="mono text-4xl" style="opacity:0.1;">@</div>
+          <div class="mono text-xs text-center" style="color:var(--muted)">Pega correos y presiona<br>Validar para comenzar</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="mt-10 pt-6 border-t flex justify-between items-center" style="border-color:var(--border);">
+    <div class="mono text-xs" style="color:var(--muted2)">MAILCHECK v1.0 — Batch Email Validator</div>
+    <div class="mono text-xs" style="color:var(--muted2)" id="lastRun">—</div>
+  </div>
+</div>
+
+<script>
+const emailInput = document.getElementById('emailInput');
+const validateBtn = document.getElementById('validateBtn');
+const clearBtn = document.getElementById('clearBtn');
+const pasteBtn = document.getElementById('pasteBtn');
+const counter = document.getElementById('counter');
+const resultsList = document.getElementById('resultsList');
+const emptyState = document.getElementById('emptyState');
+const statsGrid = document.getElementById('statsGrid');
+const exportBtn = document.getElementById('exportBtn');
+const progressWrap = document.getElementById('progressWrap');
+const progressFill = document.getElementById('progressFill');
+const apiStatus = document.getElementById('apiStatus');
+const domainBox = document.getElementById('domainBox');
+const domainList = document.getElementById('domainList');
+
+let allResults = [];
+let activeFilter = 'all';
+
+function parseEmails(text) {
+  return [...new Set(
+    text.split(/[\n,;]+/)
+      .map(e => e.trim().toLowerCase())
+      .filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
+  )];
+}
+
+emailInput.addEventListener('input', () => {
+  const n = parseEmails(emailInput.value).length;
+  counter.textContent = n === 0 ? '0 emails' : `${n} email${n !== 1 ? 's' : ''} detectado${n !== 1 ? 's' : ''}`;
+  validateBtn.disabled = n === 0;
+});
+
+pasteBtn.addEventListener('click', async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    emailInput.value = text;
+    emailInput.dispatchEvent(new Event('input'));
+  } catch {}
+});
+
+clearBtn.addEventListener('click', () => {
+  emailInput.value = '';
+  counter.textContent = '0 emails';
+  validateBtn.disabled = true;
+  allResults = [];
+  activeFilter = 'all';
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.toggle('active', t.dataset.filter === 'all'));
+  renderResults();
+  statsGrid.style.display = 'none';
+  domainBox.style.display = 'none';
+  exportBtn.disabled = true;
+  apiStatus.textContent = '— sin conectar';
+  apiStatus.style.color = 'var(--muted)';
+});
+
+document.getElementById('filterTabs').addEventListener('click', e => {
+  const tab = e.target.closest('.filter-tab');
+  if (!tab) return;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  activeFilter = tab.dataset.filter;
+  renderResults();
+});
+
+function classify(r) {
+  if (!r.format_valid || r.is_disposable) return 'invalid';
+  if (r.smtp_check === false || r.did_you_mean) return 'risky';
+  if (r.smtp_check === true || r.mx_found) return 'valid';
+  return 'unknown';
+}
+
+function getTags(r) {
+  const t = [];
+  if (r.is_disposable) t.push({ text: 'desechable', cls: 'invalid' });
+  if (r.is_role_account) t.push({ text: 'rol', cls: 'info' });
+  if (r.is_free_email !== undefined) t.push({ text: r.is_free_email ? 'gratuito' : 'corporativo', cls: 'info' });
+  if (r.mx_found === true) t.push({ text: 'MX ✓', cls: 'valid' });
+  if (r.mx_found === false) t.push({ text: 'sin MX', cls: 'invalid' });
+  if (r.smtp_check === true) t.push({ text: 'SMTP ✓', cls: 'valid' });
+  if (r.smtp_check === false) t.push({ text: 'SMTP ✗', cls: 'invalid' });
+  if (r.did_you_mean) t.push({ text: `¿${r.did_you_mean}?`, cls: 'risky' });
+  return t;
+}
+
+function renderResults() {
+  const filtered = activeFilter === 'all' ? allResults
+    : allResults.filter(r => classify(r) === activeFilter || (activeFilter === 'invalid' && classify(r) === 'unknown'));
+
+  if (allResults.length === 0) {
+    resultsList.innerHTML = '';
+    resultsList.appendChild(emptyState);
+    return;
+  }
+
+  if (filtered.length === 0) {
+    resultsList.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;"><div class="mono text-xs" style="color:var(--muted)">Sin resultados para este filtro</div></div>`;
+    return;
+  }
+
+  resultsList.innerHTML = filtered.map((r, i) => {
+    const cls = classify(r);
+    const label = { valid: 'válido', invalid: 'inválido', risky: 'riesgoso', unknown: 'desconocido' }[cls];
+    const tags = getTags(r);
+    const delay = Math.min(i * 25, 300);
+    return `
+      <div class="result-item" style="animation-delay:${delay}ms;">
+        <div class="dot dot-${cls}"></div>
+        <div style="flex:1;min-width:0;">
+          <div class="flex items-start justify-between gap-2">
+            <div class="mono text-xs" style="word-break:break-all;line-height:1.5;color:var(--text);">${r.email}</div>
+            <button class="copy-btn" onclick="navigator.clipboard.writeText('${r.email}')" title="Copiar">copy</button>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;">
+            <span class="tag tag-${cls}">${label}</span>
+            ${tags.map(t => `<span class="tag tag-${t.cls}">${t.text}</span>`).join('')}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function updateStats() {
+  const v = allResults.filter(r => classify(r) === 'valid').length;
+  const inv = allResults.filter(r => ['invalid','unknown'].includes(classify(r))).length;
+  const risk = allResults.filter(r => classify(r) === 'risky').length;
+  document.getElementById('statValid').textContent = v;
+  document.getElementById('statInvalid').textContent = inv;
+  document.getElementById('statRisky').textContent = risk;
+  statsGrid.style.display = 'grid';
+
+  // Domain breakdown
+  const domains = {};
+  allResults.forEach(r => {
+    const d = r.email.split('@')[1] || '?';
+    domains[d] = (domains[d] || 0) + 1;
+  });
+  const sorted = Object.entries(domains).sort((a,b) => b[1]-a[1]).slice(0, 5);
+  const max = sorted[0]?.[1] || 1;
+  domainList.innerHTML = sorted.map(([d, n]) => `
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="mono text-xs" style="color:var(--muted);width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d}</div>
+      <div style="flex:1;background:var(--bg3);border-radius:2px;height:3px;overflow:hidden;">
+        <div style="height:100%;background:var(--border2);width:${Math.round((n/max)*100)}%;transition:width 0.5s;"></div>
+      </div>
+      <div class="mono text-xs" style="color:var(--muted);width:20px;text-align:right;">${n}</div>
+    </div>`).join('');
+  domainBox.style.display = 'block';
+}
+
+validateBtn.addEventListener('click', async () => {
+  const emails = parseEmails(emailInput.value);
+  if (!emails.length) return;
+
+  validateBtn.disabled = true;
+  validateBtn.innerHTML = '<span class="spinner"></span> Validando...';
+  progressWrap.style.display = 'block';
+  progressFill.style.width = '5%';
+  apiStatus.textContent = '● conectando...';
+  apiStatus.style.color = 'var(--amber-text)';
+  allResults = [];
+  renderResults();
+
+  const CHUNK = 10;
+  const chunks = [];
+  for (let i = 0; i < emails.length; i += CHUNK) chunks.push(emails.slice(i, i + CHUNK));
+
+  try {
+    for (let ci = 0; ci < chunks.length; ci++) {
+      const resp = await fetch('https://purple-wind-d745.santiago-ruiz1991.workers.dev/api/validate/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'accept': '*/*' },
+        body: JSON.stringify({ emails: chunks[ci] })
+      });
+
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      const results = Array.isArray(data) ? data : (data.results || data.emails || []);
+      allResults.push(...results);
+
+      progressFill.style.width = Math.round(((ci + 1) / chunks.length) * 95) + '%';
+      updateStats();
+      renderResults();
+    }
+
+    progressFill.style.width = '100%';
+    exportBtn.disabled = false;
+    apiStatus.textContent = `● conectado — ${allResults.length} validados`;
+    apiStatus.style.color = 'var(--green-text)';
+    document.getElementById('lastRun').textContent = `última ejecución: ${new Date().toLocaleTimeString('es-CO')}`;
+    setTimeout(() => { progressWrap.style.display = 'none'; }, 800);
+
+  } catch (err) {
+    apiStatus.textContent = `✗ error: ${err.message}`;
+    apiStatus.style.color = 'var(--red-text)';
+    resultsList.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;">
+        <div class="mono text-2xl" style="color:var(--red-text)">✗</div>
+        <div class="mono text-xs text-center" style="color:var(--muted)">Error: ${err.message}<br><br>Verifica que el servidor API esté<br>disponible y con CORS habilitado.</div>
+      </div>`;
+    progressWrap.style.display = 'none';
+  }
+
+  validateBtn.innerHTML = '✉ Validar emails';
+  validateBtn.disabled = false;
+});
+
+exportBtn.addEventListener('click', () => {
+  if (!allResults.length) return;
+  const header = 'email,status,format_valid,mx_found,smtp_check,is_disposable,is_free_email,is_role_account,did_you_mean';
+  const rows = allResults.map(r => [
+    r.email, classify(r), r.format_valid ?? '', r.mx_found ?? '', r.smtp_check ?? '',
+    r.is_disposable ?? '', r.is_free_email ?? '', r.is_role_account ?? '', r.did_you_mean ?? ''
+  ].map(v => `"${v}"`).join(','));
+  const csv = [header, ...rows].join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `mailcheck_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
