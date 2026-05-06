@@ -339,9 +339,8 @@ function classify(r) {
   // Prioritize API status if available
   if (r.status) {
     const s = r.status.toUpperCase();
-    if (['INVALID_SYNTAX','INVALID_DOMAIN','INVALID'].includes(s)) return 'invalid';
-    if (['NO_MX_RECORDS'].includes(s)) return 'risky';
-    if (['DISPOSABLE','ROLE_BASED'].includes(s)) return 'risky';
+    if (['INVALID_SYNTAX','INVALID_DOMAIN','DISPOSABLE'].includes(s)) return 'invalid';
+    if (['NO_MX_RECORDS','ROLE_BASED'].includes(s)) return 'risky';
     if (s === 'VALID') return 'valid';
   }
   
@@ -349,10 +348,8 @@ function classify(r) {
   const v = r.validations || {};
   if (!v.syntax || v.is_disposable) return 'invalid';
   if (!v.domain_exists) return 'invalid';
-  if (!v.mx_records) return 'risky';
-  if (v.mailbox_exists === false) return 'risky';
-  if (v.mailbox_exists === true) return 'valid';
-  return 'risky';
+  if (!v.mx_records || v.mailbox_exists === false) return 'risky';
+  return 'valid';
 }
 
 function getTags(r) {
