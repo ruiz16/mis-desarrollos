@@ -85,7 +85,7 @@
   .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
   .dot-valid { background: var(--green); }
   .dot-invalid { background: var(--red); }
-  .dot-risky { background: var(--amber); }
+  .dot-warning { background: var(--amber); }
   .dot-unknown { background: var(--muted); }
   .result-item {
     background: var(--bg2);
@@ -216,10 +216,14 @@
       </div>
 
       <!-- STATS -->
-      <div id="statsGrid" style="display:none;" class="grid grid-cols-2 gap-3 mt-5">
+      <div id="statsGrid" style="display:none;" class="grid grid-cols-3 gap-3 mt-5">
         <div class="stat-card">
           <div class="mono font-bold text-2xl" id="statValid" style="color:var(--green-text)">0</div>
           <div class="text-xs mt-1" style="color:var(--muted)">válidos</div>
+        </div>
+        <div class="stat-card">
+          <div class="mono font-bold text-2xl" id="statWarning" style="color:var(--amber-text)">0</div>
+          <div class="text-xs mt-1" style="color:var(--muted)">alertas</div>
         </div>
         <div class="stat-card">
           <div class="mono font-bold text-2xl" id="statInvalid" style="color:var(--red-text)">0</div>
@@ -242,6 +246,7 @@
           <div class="flex gap-1" id="filterTabs">
             <button class="filter-tab active" data-filter="all">Todos</button>
             <button class="filter-tab" data-filter="valid">✓ Válidos</button>
+            <button class="filter-tab" data-filter="warning">⚠ Alertas</button>
             <button class="filter-tab" data-filter="invalid">✗ Inválidos</button>
           </div>
           <button id="exportBtn" class="btn-ghost text-xs px-3 py-1 rounded" style="font-size:11px;" disabled>↓ CSV</button>
@@ -331,16 +336,14 @@ document.getElementById('filterTabs').addEventListener('click', e => {
 });
 
 function classify(r) {
-  // Prioritize API status if available
+  const v = r.validations || {};
+  if (v.is_disposable || v.is_role_based) return 'warning';
   if (r.status) {
     const s = r.status.toUpperCase();
-    if (['INVALID_SYNTAX','INVALID_DOMAIN','DISPOSABLE','NO_MX_RECORDS','ROLE_BASED','INVALID'].includes(s)) return 'invalid';
+    if (['INVALID_SYNTAX','INVALID_DOMAIN','NO_MX_RECORDS','INVALID'].includes(s)) return 'invalid';
     if (s === 'VALID') return 'valid';
   }
-  
-  // Fallback to individual validations
-  const v = r.validations || {};
-  if (!v.syntax || v.is_disposable || !v.domain_exists || !v.mx_records || v.mailbox_exists === false) return 'invalid';
+  if (!v.syntax || !v.domain_exists || !v.mx_records || v.mailbox_exists === false) return 'invalid';
   return 'valid';
 }
 
@@ -373,7 +376,7 @@ function renderResults() {
 
   resultsList.innerHTML = filtered.map((r, i) => {
     const cls = classify(r);
-    const label = { valid: 'válido', invalid: 'inválido' }[cls];
+    const label = { valid: 'válido', warning: 'alerta', invalid: 'inválido' }[cls];
     const tags = getTags(r);
     const delay = Math.min(i * 25, 300);
     return `
@@ -395,8 +398,10 @@ function renderResults() {
 
 function updateStats() {
   const v = allResults.filter(r => classify(r) === 'valid').length;
+  const w = allResults.filter(r => classify(r) === 'warning').length;
   const inv = allResults.filter(r => classify(r) === 'invalid').length;
   document.getElementById('statValid').textContent = v;
+  document.getElementById('statWarning').textContent = w;
   document.getElementById('statInvalid').textContent = inv;
   statsGrid.style.display = 'grid';
 

@@ -174,6 +174,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);min-h
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <div class="stat-c"><div class="stat-n" id="sTotal">0</div><div style="font-size:12px;color:var(--t2);">total</div></div>
       <div class="stat-c"><div class="stat-n" id="sValid" style="color:var(--green)">0</div><div style="font-size:12px;color:var(--t2);">válidos</div></div>
+      <div class="stat-c"><div class="stat-n" id="sWarn"  style="color:var(--amber)">0</div><div style="font-size:12px;color:var(--t2);">alertas</div></div>
       <div class="stat-c"><div class="stat-n" id="sInv"   style="color:var(--red)">0</div><div style="font-size:12px;color:var(--t2);">inválidos</div></div>
       <div class="stat-c" style="margin-left:auto;"><div class="stat-n" id="sAvg" style="color:var(--blue)">—</div><div style="font-size:12px;color:var(--t2);">score prom.</div></div>
     </div>
@@ -184,6 +185,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);min-h
     <div style="display:flex;gap:4px;" id="tabs">
       <button class="ftab on" data-f="all">Todos</button>
       <button class="ftab" data-f="VALID">Válidos</button>
+      <button class="ftab" data-f="WARNING">Alertas</button>
       <button class="ftab" data-f="INVALID">Inválidos</button>
     </div>
     <div style="margin-left:auto;display:flex;gap:6px;">
@@ -370,6 +372,8 @@ function deriveStatus(v,sc) {
 
 function group(r) {
    const s = r.status;
+   const v = r.validations || {};
+   if(v.is_disposable || v.is_role_based) return 'WARNING';
    if(s==='VALID')      return 'VALID';
    if(['PENDING','ERROR'].includes(s)) return s;
    return 'INVALID';
@@ -388,11 +392,11 @@ const STATUS_LABELS = {
 };
 
 function badgeCls(r){
-  const g=group(r);
-  if(g==='VALID')   return 's-valid';
-  if(g==='RISKY')   return 's-risky';
-  if(g==='PENDING') return 's-pending';
-  return 's-invalid';
+   const g=group(r);
+   if(g==='VALID')   return 's-valid';
+   if(g==='WARNING')  return 's-risky';
+   if(g==='PENDING') return 's-pending';
+   return 's-invalid';
 }
 
 function rowHTML(r, delay) {
@@ -441,10 +445,12 @@ function updateStats() {
    const resolved = data.filter(r=>r.status!=='PENDING');
    const n   = resolved.length;
    const v   = resolved.filter(r=>r.status==='VALID').length;
-   const iv  = resolved.filter(r=>r.status!=='VALID').length;
+   const w   = resolved.filter(r=>group(r)==='WARNING').length;
+   const iv  = resolved.filter(r=>r.status!=='VALID' && group(r)!=='WARNING').length;
    const av  = n ? Math.round(resolved.reduce((s,r)=>s+(r.score??0),0)/n) : 0;
    document.getElementById('sTotal').textContent = data.length;
    document.getElementById('sValid').textContent = v;
+   document.getElementById('sWarn').textContent   = w;
    document.getElementById('sInv').textContent   = iv;
   document.getElementById('sAvg').textContent   = n ? av : '—';
 }
