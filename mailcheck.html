@@ -216,7 +216,7 @@
       </div>
 
       <!-- STATS -->
-      <div id="statsGrid" style="display:none;" class="grid grid-cols-3 gap-3 mt-5">
+      <div id="statsGrid" style="display:none;" class="grid grid-cols-2 gap-3 mt-5">
         <div class="stat-card">
           <div class="mono font-bold text-2xl" id="statValid" style="color:var(--green-text)">0</div>
           <div class="text-xs mt-1" style="color:var(--muted)">válidos</div>
@@ -224,10 +224,6 @@
         <div class="stat-card">
           <div class="mono font-bold text-2xl" id="statInvalid" style="color:var(--red-text)">0</div>
           <div class="text-xs mt-1" style="color:var(--muted)">inválidos</div>
-        </div>
-        <div class="stat-card">
-          <div class="mono font-bold text-2xl" id="statRisky" style="color:var(--amber-text)">0</div>
-          <div class="text-xs mt-1" style="color:var(--muted)">riesgosos</div>
         </div>
       </div>
 
@@ -245,9 +241,8 @@
         <div class="flex gap-2">
           <div class="flex gap-1" id="filterTabs">
             <button class="filter-tab active" data-filter="all">Todos</button>
-            <button class="filter-tab" data-filter="valid">✓</button>
-            <button class="filter-tab" data-filter="invalid">✗</button>
-            <button class="filter-tab" data-filter="risky">~</button>
+            <button class="filter-tab" data-filter="valid">✓ Válidos</button>
+            <button class="filter-tab" data-filter="invalid">✗ Inválidos</button>
           </div>
           <button id="exportBtn" class="btn-ghost text-xs px-3 py-1 rounded" style="font-size:11px;" disabled>↓ CSV</button>
         </div>
@@ -339,16 +334,13 @@ function classify(r) {
   // Prioritize API status if available
   if (r.status) {
     const s = r.status.toUpperCase();
-    if (['INVALID_SYNTAX','INVALID_DOMAIN','DISPOSABLE'].includes(s)) return 'invalid';
-    if (['NO_MX_RECORDS','ROLE_BASED'].includes(s)) return 'risky';
+    if (['INVALID_SYNTAX','INVALID_DOMAIN','DISPOSABLE','NO_MX_RECORDS','ROLE_BASED','INVALID'].includes(s)) return 'invalid';
     if (s === 'VALID') return 'valid';
   }
   
   // Fallback to individual validations
   const v = r.validations || {};
-  if (!v.syntax || v.is_disposable) return 'invalid';
-  if (!v.domain_exists) return 'invalid';
-  if (!v.mx_records || v.mailbox_exists === false) return 'risky';
+  if (!v.syntax || v.is_disposable || !v.domain_exists || !v.mx_records || v.mailbox_exists === false) return 'invalid';
   return 'valid';
 }
 
@@ -356,12 +348,11 @@ function getTags(r) {
   const v = r.validations || {};
   const t = [];
   if (v.is_disposable) t.push({ text: 'desechable', cls: 'invalid' });
-  if (v.is_role_based) t.push({ text: 'rol', cls: 'info' });
+  if (v.is_role_based) t.push({ text: 'rol', cls: 'invalid' });
   if (v.syntax === false) t.push({ text: 'sintaxis inválida', cls: 'invalid' });
   if (v.domain_exists === false) t.push({ text: 'dominio inválido', cls: 'invalid' });
   if (v.mx_records === false) t.push({ text: 'sin MX', cls: 'invalid' });
-  if (v.mailbox_exists === true) t.push({ text: 'buzón existe', cls: 'valid' });
-  if (v.mailbox_exists === false) t.push({ text: 'buzón no existe', cls: 'risky' });
+  if (v.mailbox_exists === false) t.push({ text: 'buzón no existe', cls: 'invalid' });
   return t;
 }
 
@@ -382,7 +373,7 @@ function renderResults() {
 
   resultsList.innerHTML = filtered.map((r, i) => {
     const cls = classify(r);
-    const label = { valid: 'válido', invalid: 'inválido', risky: 'riesgoso', unknown: 'desconocido' }[cls];
+    const label = { valid: 'válido', invalid: 'inválido' }[cls];
     const tags = getTags(r);
     const delay = Math.min(i * 25, 300);
     return `
@@ -404,11 +395,9 @@ function renderResults() {
 
 function updateStats() {
   const v = allResults.filter(r => classify(r) === 'valid').length;
-  const inv = allResults.filter(r => ['invalid','unknown'].includes(classify(r))).length;
-  const risk = allResults.filter(r => classify(r) === 'risky').length;
+  const inv = allResults.filter(r => classify(r) === 'invalid').length;
   document.getElementById('statValid').textContent = v;
   document.getElementById('statInvalid').textContent = inv;
-  document.getElementById('statRisky').textContent = risk;
   statsGrid.style.display = 'grid';
 
   // Domain breakdown
