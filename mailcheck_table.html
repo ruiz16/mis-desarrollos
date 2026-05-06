@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MAILCHECK</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080808;--bg2:#111;--bg3:#181818;
+  --b1:rgba(255,255,255,0.06);--b2:rgba(255,255,255,0.12);--b3:rgba(255,255,255,0.22);
+  --t1:#f2f2f2;--t2:#888;--t3:#444;
+  --green:#5DCAA5;--gbg:rgba(29,158,117,0.10);
+  --red:#F09595;  --rbg:rgba(226,75,74,0.10);
+  --amber:#FAC775;--abg:rgba(186,117,23,0.10);
+  --blue:#85B7EB;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh}
+.mono{font-family:'Space Mono',monospace}
+
+/* ── INPUT AREA ── */
+.input-shell{
+  background:var(--bg2);border:1px solid var(--b2);border-radius:12px;
+  transition:border-color .2s,box-shadow .2s;overflow:hidden;
+}
+.input-shell:focus-within{border-color:var(--b3);box-shadow:0 0 0 3px rgba(255,255,255,0.04)}
+.input-shell textarea{
+  width:100%;background:transparent;border:none;outline:none;resize:none;
+  color:var(--t1);font-family:'Space Mono',monospace;font-size:13px;
+  padding:16px 20px;min-height:96px;max-height:260px;line-height:1.7;
+}
+.input-shell textarea::placeholder{color:var(--t3)}
+.input-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 12px 10px;border-top:1px solid var(--b1);
+}
+
+/* ── BUTTONS ── */
+.btn-go{
+  padding:0 22px;height:38px;border-radius:8px;
+  background:var(--t1);color:#080808;border:none;cursor:pointer;
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
+  display:inline-flex;align-items:center;gap:6px;
+  transition:opacity .15s,transform .1s;
+}
+.btn-go:hover:not(:disabled){opacity:.85}
+.btn-go:active:not(:disabled){transform:scale(.97)}
+.btn-go:disabled{opacity:.25;cursor:not-allowed}
+.ghost{
+  background:transparent;border:1px solid var(--b2);color:var(--t2);
+  font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;
+  padding:5px 13px;border-radius:8px;transition:all .12s;
+  display:inline-flex;align-items:center;gap:5px;
+}
+.ghost:hover{background:var(--bg3);color:var(--t1)}
+.ghost:disabled{opacity:.25;cursor:not-allowed}
+
+/* ── FILTER TABS ── */
+.ftab{
+  font-size:12px;padding:5px 13px;border-radius:20px;
+  border:1px solid transparent;background:transparent;color:var(--t2);
+  cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .12s;
+}
+.ftab.on{background:var(--bg3);border-color:var(--b2);color:var(--t1)}
+
+/* ── STAT CARDS ── */
+.stat-c{
+  display:flex;align-items:center;gap:10px;
+  background:var(--bg2);border:1px solid var(--b1);border-radius:8px;padding:10px 16px;
+}
+.stat-n{font-family:'Space Mono',monospace;font-size:22px;font-weight:700;line-height:1}
+
+/* ── TABLE ── */
+.tbl-row{
+  display:grid;
+  grid-template-columns:200px 1fr 110px 140px;
+  gap:12px;padding:11px 20px;align-items:center;
+  border-bottom:1px solid var(--b1);
+  animation:rowIn .22s ease both;
+}
+.tbl-row:last-child{border-bottom:none}
+.tbl-row:hover{background:rgba(255,255,255,.018)}
+@keyframes rowIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+
+/* pending shimmer */
+.tbl-row.pending{opacity:.55}
+.shimmer{
+  display:inline-block;width:80px;height:10px;border-radius:4px;
+  background:linear-gradient(90deg,var(--bg3) 25%,var(--b2) 50%,var(--bg3) 75%);
+  background-size:200% 100%;animation:shim 1.2s ease infinite;
+}
+@keyframes shim{0%{background-position:100% 0}100%{background-position:-100% 0}}
+
+/* ── VALIDATION PILLS ── */
+.vpills{display:flex;gap:3px;flex-wrap:wrap}
+.vp{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:5px 5px;border-radius:6px;
+  font-family:'Space Mono',monospace;font-size:9px;line-height:1.2;
+  text-align:center;min-width:38px;
+}
+.vp.pass{background:var(--gbg);color:var(--green)}
+.vp.fail{background:var(--rbg);color:var(--red)}
+.vp.warn{background:var(--abg);color:var(--amber)}
+.vp.neut{background:var(--b1);color:var(--t2)}
+
+/* ── SCORE BAR ── */
+.bar-track{height:3px;background:var(--b1);border-radius:2px;overflow:hidden;flex:1}
+.bar-fill{height:100%;border-radius:2px;transition:width .7s cubic-bezier(.16,1,.3,1)}
+
+/* ── STATUS BADGE ── */
+.sbadge{
+  font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.04em;
+  padding:3px 10px;border-radius:20px;white-space:nowrap;display:inline-block;
+}
+.s-valid  {background:var(--gbg);color:var(--green)}
+.s-risky  {background:var(--abg);color:var(--amber)}
+.s-invalid{background:var(--rbg);color:var(--red)}
+.s-pending{background:var(--b1);color:var(--t2)}
+
+/* ── PROGRESS ── */
+.prog-wrap{height:2px;background:var(--b1);border-radius:2px;overflow:hidden;margin-top:10px}
+.prog-fill{height:100%;background:var(--t1);border-radius:2px;transition:width .4s ease}
+
+/* ── SPIN ── */
+.spin{
+  width:12px;height:12px;border-radius:50%;
+  border:2px solid rgba(8,8,8,.2);border-top-color:#080808;
+  animation:rot .5s linear infinite;display:inline-block;vertical-align:middle;
+}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+</style>
+</head>
+<body>
+<div style="max-width:920px;margin:0 auto;padding:52px 24px 100px;">
+
+  <!-- HEADER -->
+  <div style="margin-bottom:40px;">
+    <div class="mono" style="font-size:10px;letter-spacing:.18em;color:var(--t3);margin-bottom:10px;text-transform:uppercase;">Batch Email Validator</div>
+    <h1 class="mono" style="font-size:38px;font-weight:700;letter-spacing:-.02em;line-height:1;">
+      MAIL<span style="color:var(--t3);">CHECK</span>
+    </h1>
+    <p style="margin-top:10px;color:var(--t2);font-size:14px;font-weight:300;">
+      Pega uno o varios correos — los resultados se van añadiendo a la tabla.
+    </p>
+  </div>
+
+  <!-- INPUT -->
+  <div class="input-shell">
+    <textarea id="ta" placeholder="correo1@dominio.com&#10;correo2@empresa.co&#10;user@hotmail.com&#10;&#10;Uno por línea, o separados por coma o punto y coma."></textarea>
+    <div class="input-footer">
+      <span class="mono" id="taCount" style="font-size:11px;color:var(--t3);">0 emails</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="mono" id="apiTxt" style="font-size:11px;color:var(--t3);">—</span>
+        <button class="ghost" id="clrInput">Limpiar</button>
+        <button class="btn-go" id="goBtn" disabled><span id="btnTxt">Añadir y validar</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="prog-wrap" id="progWrap" style="display:none;">
+    <div class="prog-fill" id="progFill" style="width:0%"></div>
+  </div>
+
+  <!-- STATS -->
+  <div id="statsWrap" style="display:none;margin-top:28px;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <div class="stat-c"><div class="stat-n" id="sTotal">0</div><div style="font-size:12px;color:var(--t2);">total</div></div>
+      <div class="stat-c"><div class="stat-n" id="sValid" style="color:var(--green)">0</div><div style="font-size:12px;color:var(--t2);">válidos</div></div>
+      <div class="stat-c"><div class="stat-n" id="sInv"   style="color:var(--red)">0</div><div style="font-size:12px;color:var(--t2);">inválidos</div></div>
+      <div class="stat-c"><div class="stat-n" id="sRisk"  style="color:var(--amber)">0</div><div style="font-size:12px;color:var(--t2);">riesgosos</div></div>
+      <div class="stat-c" style="margin-left:auto;"><div class="stat-n" id="sAvg" style="color:var(--blue)">—</div><div style="font-size:12px;color:var(--t2);">score prom.</div></div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div id="ctrlWrap" style="display:none;margin-top:16px;align-items:center;gap:8px;flex-wrap:wrap;">
+    <div style="display:flex;gap:4px;" id="tabs">
+      <button class="ftab on" data-f="all">Todos</button>
+      <button class="ftab" data-f="VALID">Válidos</button>
+      <button class="ftab" data-f="RISKY">Riesgosos</button>
+      <button class="ftab" data-f="INVALID">Inválidos</button>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:6px;">
+      <button class="ghost" id="sortBtn">↕ score</button>
+      <button class="ghost" id="expBtn" disabled>↓ CSV</button>
+      <button class="ghost" id="clrAll">✕ Borrar todo</button>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div id="tableWrap" style="display:none;margin-top:12px;background:var(--bg2);border:1px solid var(--b1);border-radius:12px;overflow:hidden;">
+    <div style="display:grid;grid-template-columns:200px 1fr 110px 140px;gap:12px;padding:9px 20px;border-bottom:1px solid var(--b2);">
+      <div class="mono" style="font-size:10px;letter-spacing:.1em;color:var(--t3);">EMAIL</div>
+      <div class="mono" style="font-size:10px;letter-spacing:.1em;color:var(--t3);">VALIDACIONES</div>
+      <div class="mono" style="font-size:10px;letter-spacing:.1em;color:var(--t3);">SCORE</div>
+      <div class="mono" style="font-size:10px;letter-spacing:.1em;color:var(--t3);">ESTADO</div>
+    </div>
+    <div id="list"></div>
+    <div id="noRows" style="display:none;padding:56px;text-align:center;">
+      <span class="mono" style="font-size:12px;color:var(--t3);">Sin resultados para este filtro</span>
+    </div>
+  </div>
+
+</div>
+<script>
+const ta       = document.getElementById('ta');
+const goBtn    = document.getElementById('goBtn');
+const btnTxt   = document.getElementById('btnTxt');
+const apiTxt   = document.getElementById('apiTxt');
+const taCount  = document.getElementById('taCount');
+const statsWrap= document.getElementById('statsWrap');
+const ctrlWrap = document.getElementById('ctrlWrap');
+const tableWrap= document.getElementById('tableWrap');
+const list     = document.getElementById('list');
+const noRows   = document.getElementById('noRows');
+const expBtn   = document.getElementById('expBtn');
+const sortBtn  = document.getElementById('sortBtn');
+const progWrap = document.getElementById('progWrap');
+const progFill = document.getElementById('progFill');
+
+let data     = [];   // all validated results
+let filter   = 'all';
+let sortMode = 'time'; // time | desc | asc
+let busy     = false;
+
+/* ── PARSE ── */
+function parseEmails(txt) {
+  return [...new Set(
+    txt.split(/[\n,;]+/)
+      .map(s => s.trim().toLowerCase())
+      .filter(s => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s))
+  )];
+}
+
+/* ── INPUT EVENTS ── */
+ta.addEventListener('input', syncCount);
+function syncCount() {
+  const emails = parseEmails(ta.value);
+  const n = emails.length;
+  taCount.textContent = n === 0 ? '0 emails' : `${n} email${n!==1?'s':''}`;
+  goBtn.disabled = n === 0 || busy;
+}
+
+document.getElementById('clrInput').addEventListener('click', () => {
+  ta.value = ''; syncCount();
+});
+
+/* ── VALIDATE ── */
+goBtn.addEventListener('click', go);
+
+async function go() {
+  let emails = parseEmails(ta.value);
+  if (!emails.length || busy) return;
+
+  // Remove already-loaded emails
+  const existing = new Set(data.map(r => r.email));
+  const dupes    = emails.filter(e => existing.has(e));
+  emails         = emails.filter(e => !existing.has(e));
+
+  if (!emails.length) {
+    apiTxt.textContent = dupes.length ? `${dupes.length} ya validado${dupes.length!==1?'s':''}` : '—';
+    return;
+  }
+
+  busy = true;
+  goBtn.disabled = true;
+  btnTxt.innerHTML = '<span class="spin"></span> Validando...';
+  progWrap.style.display = 'block';
+  progFill.style.width = '5%';
+  apiTxt.textContent = `● validando ${emails.length}...`;
+  apiTxt.style.color = 'var(--amber)';
+
+  // Add pending rows immediately so user sees feedback
+  const pending = emails.map(email => ({ email, status:'PENDING', score:null, validations:null, _t:Date.now() }));
+  data.unshift(...pending);
+  showWidgets();
+  render();
+
+  // Batch in chunks of 10
+  const CHUNK = 10;
+  let done = 0;
+  for (let i = 0; i < emails.length; i += CHUNK) {
+    const chunk = emails.slice(i, i + CHUNK);
+    try {
+      const res  = await fetch('https://rapid-email-verifier.fly.dev/api/validate/batch', {
+        method:'POST',
+        headers:{'Content-Type':'application/json',accept:'*/*'},
+        body:JSON.stringify({emails:chunk})
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      const raw  = Array.isArray(json) ? json : (json.results || []);
+
+      // Merge results into data array (replace pending rows)
+      raw.forEach(r => {
+        const norm = normalize(r);
+        const idx  = data.findIndex(d => d.email === norm.email);
+        if (idx !== -1) data[idx] = norm;
+      });
+
+    } catch(e) {
+      // Mark chunk as error
+      chunk.forEach(email => {
+        const idx = data.findIndex(d => d.email === email);
+        if (idx !== -1) data[idx] = { email, status:'ERROR', score:0, validations:null, _t:Date.now() };
+      });
+    }
+
+    done += chunk.length;
+    progFill.style.width = Math.round(5 + (done / emails.length) * 90) + '%';
+    updateStats();
+    render();
+  }
+
+  progFill.style.width = '100%';
+  expBtn.disabled = false;
+  apiTxt.textContent = `✓ ${data.filter(r=>r.status!=='PENDING').length} validado${data.length!==1?'s':''}`;
+  apiTxt.style.color = 'var(--green)';
+  ta.value = '';
+  syncCount();
+
+  setTimeout(() => { progWrap.style.display='none'; progFill.style.width='0%'; }, 700);
+
+  busy = false;
+  btnTxt.textContent = 'Añadir y validar';
+  goBtn.disabled = true;
+}
+
+/* ── NORMALIZE ── */
+function normalize(raw) {
+  const v = raw.validations || {};
+  const val = {
+    syntax:         v.syntax         ?? raw.format_valid    ?? true,
+    domain_exists:  v.domain_exists  ?? raw.mx_found        ?? false,
+    mx_records:     v.mx_records     ?? raw.mx_found        ?? false,
+    mailbox_exists: v.mailbox_exists ?? (raw.smtp_check === true),
+    is_disposable:  v.is_disposable  ?? raw.is_disposable   ?? false,
+    is_role_based:  v.is_role_based  ?? raw.is_role_account ?? false,
+  };
+  const score  = raw.score  ?? calcScore(val);
+  const status = raw.status ?? deriveStatus(val, score);
+  return { email:raw.email, validations:val, score, status, _t:Date.now() };
+}
+
+function calcScore(v) {
+  let s=0;
+  if(v.syntax)         s+=20;
+  if(v.domain_exists)  s+=20;
+  if(v.mx_records)     s+=20;
+  if(v.mailbox_exists) s+=40;
+  if(v.is_disposable)  s-=20;
+  return Math.max(0,Math.min(100,s));
+}
+
+function deriveStatus(v,sc) {
+  if(!v.syntax)        return 'INVALID_SYNTAX';
+  if(!v.domain_exists) return 'INVALID_DOMAIN';
+  if(!v.mx_records)    return 'NO_MX_RECORDS';
+  if(v.is_disposable)  return 'DISPOSABLE';
+  if(v.is_role_based)  return 'ROLE_BASED';
+  if(sc>=80)           return 'VALID';
+  return 'RISKY';
+}
+
+function group(r) {
+  const s = r.status;
+  if(s==='VALID')     return 'VALID';
+  if(['NO_MX_RECORDS','DISPOSABLE','ROLE_BASED','RISKY'].includes(s)) return 'RISKY';
+  if(['PENDING','ERROR'].includes(s)) return s;
+  return 'INVALID';
+}
+
+/* ── RENDER ── */
+const VLBL = {syntax:'Sintaxis',domain_exists:'Dominio',mx_records:'MX',mailbox_exists:'Buzón',is_disposable:'Desech.',is_role_based:'Rol'};
+function vpCls(k,v){ if(k==='is_disposable') return v?'fail':'pass'; if(k==='is_role_based') return v?'warn':'neut'; return v?'pass':'fail'; }
+function vpSym(k,v){ if(k==='is_disposable') return v?'✗':'✓'; if(k==='is_role_based') return v?'~':'·'; return v?'✓':'✗'; }
+function sColor(s){ return s>=80?'var(--green)':s>=50?'var(--amber)':'var(--red)'; }
+
+const STATUS_LABELS = {
+  VALID:'VÁLIDO',NO_MX_RECORDS:'SIN MX',INVALID_DOMAIN:'DOM. INVÁLIDO',
+  INVALID_SYNTAX:'SINTAXIS',DISPOSABLE:'DESECHABLE',ROLE_BASED:'ROL',
+  RISKY:'RIESGOSO',INVALID:'INVÁLIDO',PENDING:'PENDIENTE',ERROR:'ERROR'
+};
+
+function badgeCls(r){
+  const g=group(r);
+  if(g==='VALID')   return 's-valid';
+  if(g==='RISKY')   return 's-risky';
+  if(g==='PENDING') return 's-pending';
+  return 's-invalid';
+}
+
+function rowHTML(r, delay) {
+  const isPending = r.status === 'PENDING';
+
+  const pills = isPending
+    ? `<div style="display:flex;gap:3px;">${Object.keys(VLBL).map(()=>`<div class="vp neut" style="min-width:38px;"><span style="font-size:11px;">·</span><span class="shimmer" style="width:24px;height:6px;margin-top:2px;"></span></div>`).join('')}</div>`
+    : Object.keys(VLBL).map(k=>`<div class="vp ${vpCls(k,r.validations[k])}"><span style="font-size:12px;">${vpSym(k,r.validations[k])}</span><span>${VLBL[k]}</span></div>`).join('');
+
+  const scoreCol = isPending
+    ? `<div style="display:flex;align-items:center;gap:8px;"><div class="bar-track"><div class="bar-fill" style="width:0%;"></div></div><span class="mono" style="font-size:12px;color:var(--t3);width:30px;text-align:right;">—</span></div>`
+    : `<div style="display:flex;align-items:center;gap:8px;"><div class="bar-track"><div class="bar-fill" style="width:${r.score}%;background:${sColor(r.score)};"></div></div><span class="mono" style="font-size:13px;font-weight:700;color:${sColor(r.score)};width:30px;text-align:right;">${r.score}</span></div>`;
+
+  return `
+  <div class="tbl-row ${isPending?'pending':''}" style="animation-delay:${delay}ms;">
+    <div class="mono" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t1);" title="${r.email}">${r.email}</div>
+    <div class="vpills">${pills}</div>
+    ${scoreCol}
+    <div><span class="sbadge ${badgeCls(r)}">${STATUS_LABELS[r.status]||r.status}</span></div>
+  </div>`;
+}
+
+function render() {
+  let rows = [...data];
+  if (filter !== 'all') rows = rows.filter(r => group(r) === filter || (filter!=='PENDING' && r.status==='PENDING'));
+  if (sortMode === 'desc') rows.sort((a,b) => (b.score??-1)-(a.score??-1));
+  else if (sortMode === 'asc') rows.sort((a,b) => (a.score??-1)-(b.score??-1));
+
+  if (!rows.length) { list.innerHTML=''; noRows.style.display='block'; return; }
+  noRows.style.display = 'none';
+  list.innerHTML = rows.map((r,i) => rowHTML(r, Math.min(i*20,180))).join('');
+}
+
+function updateStats() {
+  const resolved = data.filter(r=>r.status!=='PENDING');
+  const n   = resolved.length;
+  const v   = resolved.filter(r=>group(r)==='VALID').length;
+  const iv  = resolved.filter(r=>group(r)==='INVALID').length;
+  const rs  = resolved.filter(r=>group(r)==='RISKY').length;
+  const av  = n ? Math.round(resolved.reduce((s,r)=>s+(r.score??0),0)/n) : 0;
+  document.getElementById('sTotal').textContent = data.length;
+  document.getElementById('sValid').textContent = v;
+  document.getElementById('sInv').textContent   = iv;
+  document.getElementById('sRisk').textContent  = rs;
+  document.getElementById('sAvg').textContent   = n ? av : '—';
+}
+
+function showWidgets() {
+  statsWrap.style.display = 'flex';
+  ctrlWrap.style.display  = 'flex';
+  tableWrap.style.display = 'block';
+}
+
+/* ── CONTROLS ── */
+document.getElementById('tabs').addEventListener('click', e => {
+  const t=e.target.closest('.ftab'); if(!t) return;
+  document.querySelectorAll('.ftab').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on'); filter=t.dataset.f; render();
+});
+
+sortBtn.addEventListener('click', () => {
+  if(sortMode==='time'){sortMode='desc';sortBtn.textContent='↓ score';}
+  else if(sortMode==='desc'){sortMode='asc';sortBtn.textContent='↑ score';}
+  else{sortMode='time';sortBtn.textContent='↕ score';}
+  render();
+});
+
+document.getElementById('clrAll').addEventListener('click', () => {
+  data=[]; filter='all'; sortMode='time';
+  document.querySelectorAll('.ftab').forEach(t=>t.classList.toggle('on',t.dataset.f==='all'));
+  sortBtn.textContent='↕ score';
+  statsWrap.style.display='none';
+  ctrlWrap.style.display='none';
+  tableWrap.style.display='none';
+  apiTxt.textContent='—'; apiTxt.style.color='var(--t3)';
+  expBtn.disabled=true;
+});
+
+expBtn.addEventListener('click', () => {
+  if(!data.length) return;
+  const h='email,status,score,syntax,domain_exists,mx_records,mailbox_exists,is_disposable,is_role_based';
+  const rows=data.filter(r=>r.validations).map(r=>[
+    r.email,r.status,r.score,
+    r.validations.syntax,r.validations.domain_exists,r.validations.mx_records,
+    r.validations.mailbox_exists,r.validations.is_disposable,r.validations.is_role_based
+  ].map(v=>`"${v}"`).join(','));
+  const blob=new Blob(['\ufeff'+[h,...rows].join('\n')],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`mailcheck_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+});
+</script>
+</body>
+</html>
