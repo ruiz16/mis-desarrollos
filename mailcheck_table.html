@@ -289,8 +289,7 @@ async function go() {
   for (let i = 0; i < emails.length; i += CHUNK) {
     const chunk = emails.slice(i, i + CHUNK);
     try {
-      const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://rapid-email-verifier.fly.dev/api/validate/batch');
-      const res  = await fetch(proxyUrl, {
+      const res  = await fetch('https://purple-wind-d745.santiago-ruiz1991.workers.dev/api/validate/batch', {
         method:'POST',
         headers:{'Content-Type':'application/json',accept:'*/*'},
         body:JSON.stringify({emails:chunk})
