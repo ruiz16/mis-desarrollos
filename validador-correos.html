@@ -403,16 +403,14 @@ function rowHTML(r, delay) {
    let pills;
    if (isPending) {
      pills = `<div style="display:flex;gap:3px;">${Object.keys(VLBL).map(()=>`<div class="vp neut" style="min-width:38px;"><span style="font-size:11px;">·</span><span class="shimmer" style="width:24px;height:6px;margin-top:2px;"></span></div>`).join('')}</div>`;
-   } else {
-      const v = r.validations;
-      const allValid = v.syntax && v.domain_exists && v.mx_records && v.mailbox_exists && !v.is_disposable && !v.is_role_based;
-      if (allValid) {
+    } else {
+      const errors = Object.keys(VLBL).filter(k => {
+        if (k === 'is_disposable' || k === 'is_role_based') return r.validations[k] === true;
+        return r.validations[k] !== true;
+      });
+      if (errors.length === 0) {
         pills = `<div class="vp pass" style="padding:6px 12px;"><span style="font-size:12px;font-weight:600;">✓ VÁLIDO</span></div>`;
       } else {
-        const errors = Object.keys(VLBL).filter(k => {
-          if (k === 'is_disposable' || k === 'is_role_based') return r.validations[k] === true;
-          return r.validations[k] !== true;
-        });
         pills = errors.map(k=>`<div class="vp ${vpCls(k,r.validations[k])}"><span style="font-size:12px;">${vpSym(k,r.validations[k])}</span><span>${VLBL[k]}</span></div>`).join('');
       }
     }
