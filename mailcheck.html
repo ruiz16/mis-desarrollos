@@ -336,28 +336,30 @@ document.getElementById('filterTabs').addEventListener('click', e => {
 });
 
 function classify(r) {
-  if (!r.format_valid || r.is_disposable) return 'invalid';
-  if (r.smtp_check === false || r.did_you_mean) return 'risky';
-  if (r.smtp_check === true || r.mx_found) return 'valid';
-  return 'unknown';
+  const v = r.validations || {};
+  if (!v.syntax) return 'invalid';
+  if (v.is_disposable) return 'invalid';
+  if (!v.domain_exists || !v.mx_records) return 'risky';
+  if (v.mailbox_exists) return 'valid';
+  return 'risky';
 }
 
 function getTags(r) {
+  const v = r.validations || {};
   const t = [];
-  if (r.is_disposable) t.push({ text: 'desechable', cls: 'invalid' });
-  if (r.is_role_account) t.push({ text: 'rol', cls: 'info' });
-  if (r.is_free_email !== undefined) t.push({ text: r.is_free_email ? 'gratuito' : 'corporativo', cls: 'info' });
-  if (r.mx_found === true) t.push({ text: 'MX ✓', cls: 'valid' });
-  if (r.mx_found === false) t.push({ text: 'sin MX', cls: 'invalid' });
-  if (r.smtp_check === true) t.push({ text: 'SMTP ✓', cls: 'valid' });
-  if (r.smtp_check === false) t.push({ text: 'SMTP ✗', cls: 'invalid' });
-  if (r.did_you_mean) t.push({ text: `¿${r.did_you_mean}?`, cls: 'risky' });
+  if (v.is_disposable) t.push({ text: 'desechable', cls: 'invalid' });
+  if (v.is_role_based) t.push({ text: 'rol', cls: 'info' });
+  if (v.syntax === false) t.push({ text: 'sintaxis inválida', cls: 'invalid' });
+  if (v.domain_exists === false) t.push({ text: 'dominio inválido', cls: 'invalid' });
+  if (v.mx_records === false) t.push({ text: 'sin MX', cls: 'invalid' });
+  if (v.mailbox_exists === true) t.push({ text: 'buzón existe', cls: 'valid' });
+  if (v.mailbox_exists === false) t.push({ text: 'buzón no existe', cls: 'risky' });
   return t;
 }
 
 function renderResults() {
   const filtered = activeFilter === 'all' ? allResults
-    : allResults.filter(r => classify(r) === activeFilter || (activeFilter === 'invalid' && classify(r) === 'unknown'));
+    : allResults.filter(r => classify(r) === activeFilter);
 
   if (allResults.length === 0) {
     resultsList.innerHTML = '';
