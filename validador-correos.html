@@ -426,7 +426,9 @@ function rowHTML(r, delay) {
 
 function render() {
    let rows = [...data];
-   if (filter !== 'all') rows = rows.filter(r => r.status === filter || (filter!=='PENDING' && r.status==='PENDING'));
+   if (filter === 'VALID') rows = rows.filter(r => r.status === 'VALID');
+   else if (filter === 'INVALID') rows = rows.filter(r => r.status !== 'VALID' && r.status !== 'PENDING');
+   else if (filter !== 'all') rows = rows.filter(r => r.status === filter || (filter!=='PENDING' && r.status==='PENDING'));
   if (sortMode === 'desc') rows.sort((a,b) => (b.score??-1)-(a.score??-1));
   else if (sortMode === 'asc') rows.sort((a,b) => (a.score??-1)-(b.score??-1));
 
