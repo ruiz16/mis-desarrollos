@@ -336,11 +336,22 @@ document.getElementById('filterTabs').addEventListener('click', e => {
 });
 
 function classify(r) {
+  // Prioritize API status if available
+  if (r.status) {
+    const s = r.status.toUpperCase();
+    if (['INVALID_SYNTAX','INVALID_DOMAIN','INVALID'].includes(s)) return 'invalid';
+    if (['NO_MX_RECORDS'].includes(s)) return 'risky';
+    if (['DISPOSABLE','ROLE_BASED'].includes(s)) return 'risky';
+    if (s === 'VALID') return 'valid';
+  }
+  
+  // Fallback to individual validations
   const v = r.validations || {};
-  if (!v.syntax) return 'invalid';
-  if (v.is_disposable) return 'invalid';
-  if (!v.domain_exists || !v.mx_records) return 'risky';
-  if (v.mailbox_exists) return 'valid';
+  if (!v.syntax || v.is_disposable) return 'invalid';
+  if (!v.domain_exists) return 'invalid';
+  if (!v.mx_records) return 'risky';
+  if (v.mailbox_exists === false) return 'risky';
+  if (v.mailbox_exists === true) return 'valid';
   return 'risky';
 }
 
